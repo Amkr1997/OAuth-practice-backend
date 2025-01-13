@@ -1,6 +1,8 @@
 const { Todo } = require("./models/todo.model");
 const { Author } = require("./models/author.model");
 const { intializeDatabase } = require("./db/db.connect");
+const cookieParser = require("cookie-parser");
+const { uploadCloudinary } = require("./utils/cloudinary");
 
 intializeDatabase();
 
@@ -10,12 +12,16 @@ const { default: axios } = require("axios");
 const app = express();
 
 const corsOptions = {
-  origin: "*",
+  origin: [
+    "http://localhost:5173",
+    "https://www.googleapis.com/oauth2/v2/userinfo",
+  ],
   credentials: true,
   openSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => res.send("Express started"));
 
@@ -37,6 +43,7 @@ app.post("/add/todo", async (req, res) => {
 
 app.get("/get/todos", async (req, res) => {
   try {
+    //const todos = await Todo.find().populate({ path: "author" });
     const todos = await Todo.find();
 
     if (!todos)
@@ -100,7 +107,15 @@ app.post("/add/author", async (req, res) => {
         .json({ message: "Author already exists", alreadyAuthor });
     }
 
-    const newAuthor = new Author({ name, email, profilePic, id });
+    // upload the profile pic to cloudinary.
+    const profileImgUpload = await uploadCloudinary(profilePic);
+
+    const newAuthor = new Author({
+      name,
+      email,
+      profilePic: profileImgUpload.secure_url,
+      id,
+    });
     const savedAuthor = await newAuthor.save();
 
     if (!savedAuthor)
@@ -193,7 +208,7 @@ app.delete("/delete/author/:authorId", async (req, res) => {
 
 //google auth routes
 const verifyToken = (req, res, next) => {
-  if (!req.cookies.google_access_token)
+  if (!req.cookies.googleTodo_access_token)
     return res.status(403).json({ error: "Access Denied" });
 
   next();
@@ -204,7 +219,7 @@ app.get("/user/profile/google", verifyToken, async (req, res) => {
     const { googleTodo_access_token } = req.cookies;
 
     const googleAccessTokenResponse = await axios.get(
-      `https://www.googleapis.com/oauth/v2/userinfo`,
+      `https://www.googleapis.com/oauth2/v2/userinfo`,
       {
         headers: {
           Authorization: `Bearer ${googleTodo_access_token}`,
