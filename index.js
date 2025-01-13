@@ -13,7 +13,7 @@ const app = express();
 
 const corsOptions = {
   origin: [
-    "http://localhost:5173",
+    "https://o-auth-practice-frontend.vercel.app",
     "https://www.googleapis.com/oauth2/v2/userinfo",
   ],
   credentials: true,
