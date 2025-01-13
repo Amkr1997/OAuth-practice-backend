@@ -254,7 +254,7 @@ app.get("/auth/google/callback", async (req, res) => {
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
         code,
         grant_type: "authorization_code",
-        redirect_uri: `http://localhost:4000/auth/google/callback`,
+        redirect_uri: `https://o-auth-practice-backend.vercel.app/auth/google/callback`,
       },
       {
         headers: {
